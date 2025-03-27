@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import xml.etree.ElementTree as ET
 import tensorflow as tf
-from keras.utils import to_categorical
 import h5py
 import json
 import multiprocessing
@@ -46,7 +45,8 @@ class MedicalImagePreprocessor:
                                 if nodule.find('.//nih:malignancy', namespaces) is not None]
 
             return studyUid, max(malignancyScores) if malignancyScores else 0
-        except Exception:
+        except Exception as e:
+            logging.error(f"Error parsing XML file {xmlPath}: {e}")
             return None, None
 
     def parseXmlAnnotations(self):
@@ -79,7 +79,8 @@ class MedicalImagePreprocessor:
 
             label = 1 if annotations.get(studyUid, 0) > 3 else 0
             return image, label
-        except Exception:
+        except Exception as e:
+            logging.error(f"Error processing DICOM file {dicomPath}: {e}")
             return None, None
 
     def preprocessImages(self):
@@ -174,7 +175,7 @@ if __name__ == '__main__':
     for zipPath, outputPath in zip(zipFiles, outputFiles):
         preprocessedFiles.append(outputPath)
         preprocessMedicalData(zipPath, metadataPath, outputPath)
-        gc.collect()  # fro freeing up memory
+        gc.collect()  # for freeing up memory
 
     finalOutputPath = '/content/final_preprocessed_dataset.h5'
     finalSlices, finalLabels, _ = combinePreprocessedFiles(preprocessedFiles, finalOutputPath)
